@@ -1,7 +1,10 @@
 package element
 
+import "github.com/jasonpaulos/tealx/language"
+
 type Element interface {
 	Inner() []Element
+	Codegen() language.ControlFlowGraph
 	xml() xmlElement
 }
 
@@ -19,13 +22,21 @@ type Container struct {
 	Children []Element
 }
 
-func (p Container) Inner() []Element {
-	return p.Children
+func (c Container) Inner() []Element {
+	return c.Children
 }
 
-func (p Container) xmlContainer() xmlContainer {
-	xmlChildren := make([]xmlChildElement, len(p.Children))
-	for i, child := range p.Children {
+func (c Container) Codegen() language.ControlFlowGraph {
+	graph := language.MakeControlFlowGraph(nil)
+	for _, child := range c.Children {
+		graph.Append(child.Codegen())
+	}
+	return graph
+}
+
+func (c Container) xmlContainer() xmlContainer {
+	xmlChildren := make([]xmlChildElement, len(c.Children))
+	for i, child := range c.Children {
 		xmlChildren[i] = xmlChildElement{child.xml()}
 	}
 	return xmlContainer{
@@ -33,8 +44,8 @@ func (p Container) xmlContainer() xmlContainer {
 	}
 }
 
-func (p Container) xml() xmlElement {
-	return p.xmlContainer()
+func (c Container) xml() xmlElement {
+	return c.xmlContainer()
 }
 
 type xmlChildElement struct {

@@ -3,12 +3,23 @@ package element
 import (
 	"encoding/xml"
 	"fmt"
+
+	"github.com/jasonpaulos/tealx/language"
 )
 
 type If struct {
 	Condition Element   `xml:"condition"`
 	Then      Container `xml:"then"`
 	Else      Container `xml:"else"`
+}
+
+func (i *If) Codegen() language.ControlFlowGraph {
+	conditionSubgraph := i.Condition.Codegen()
+	thenSubgraph := i.Then.Codegen()
+	elseSubgraph := i.Else.Codegen()
+
+	conditionSubgraph.AppendConditional(thenSubgraph, elseSubgraph)
+	return conditionSubgraph
 }
 
 func (i *If) Inner() []Element {

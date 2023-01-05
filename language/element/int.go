@@ -1,6 +1,11 @@
 package element
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"strconv"
+
+	"github.com/jasonpaulos/tealx/language"
+)
 
 type Int struct {
 	emptyElement
@@ -8,8 +13,17 @@ type Int struct {
 	Value uint64
 }
 
-func (c *Int) xml() xmlElement {
-	return &xmlInt{Value: c.Value}
+func (i *Int) Codegen() language.ControlFlowGraph {
+	return language.MakeControlFlowGraph([]language.Operation{
+		{
+			Opcode:    "int",
+			Arguments: []string{strconv.FormatUint(i.Value, 10)},
+		},
+	})
+}
+
+func (i *Int) xml() xmlElement {
+	return &xmlInt{Value: i.Value}
 }
 
 type xmlInt struct {

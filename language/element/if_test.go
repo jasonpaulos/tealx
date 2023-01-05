@@ -3,6 +3,7 @@ package element
 import (
 	"testing"
 
+	"github.com/jasonpaulos/tealx/language"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,4 +25,23 @@ func TestIfMarshal(t *testing.T) {
 	encoded, err := MarshalXml(decoded)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(encoded))
+}
+
+func TestIfCodegen(t *testing.T) {
+	t.Parallel()
+	element := &If{
+		Condition: &Int{Value: 1},
+		Then:      Container{Children: []Element{&Int{Value: 2}}},
+		Else:      Container{Children: []Element{&Int{Value: 3}, &Int{Value: 4}}},
+	}
+
+	graph := element.Codegen()
+
+	// this is just a temporary test to manually inspect output
+
+	blocks := graph.Sort()
+	ops := language.Flatten(blocks)
+	compiled := language.Serialize(ops)
+
+	t.Log(compiled)
 }

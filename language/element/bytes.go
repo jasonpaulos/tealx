@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+
+	"github.com/jasonpaulos/tealx/language"
 )
 
 type Bytes struct {
@@ -13,8 +15,17 @@ type Bytes struct {
 	Value []byte
 }
 
-func (c *Bytes) xml() xmlElement {
-	return &xmlBytes{Value: hex.EncodeToString(c.Value), Format: BytesFormatHex}
+func (b *Bytes) Codegen() language.ControlFlowGraph {
+	return language.MakeControlFlowGraph([]language.Operation{
+		{
+			Opcode:    "int",
+			Arguments: []string{"0x" + hex.EncodeToString(b.Value)},
+		},
+	})
+}
+
+func (b *Bytes) xml() xmlElement {
+	return &xmlBytes{Value: hex.EncodeToString(b.Value), Format: BytesFormatHex}
 }
 
 const (
