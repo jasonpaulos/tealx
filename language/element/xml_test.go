@@ -10,7 +10,7 @@ func TestXmlMarshalRoundtrip(t *testing.T) {
 	t.Parallel()
 	element := &Program{
 		Version: 8,
-		parentElement: parentElement{
+		Container: Container{
 			Children: []Element{
 				&Int{Value: 1234},
 				&Bytes{Value: []byte("testing 1 2 3 4 5")},

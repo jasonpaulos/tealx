@@ -74,6 +74,8 @@ func xmlTagToXmlElement(tag string) xmlElement {
 		return &xmlInt{}
 	case "bytes":
 		return &xmlBytes{}
+	case "if":
+		return &xmlIf{}
 	default:
 		return nil
 	}
