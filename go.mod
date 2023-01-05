@@ -1,4 +1,4 @@
-module github.com/jasonpaulos/teal-plus-plus
+module github.com/jasonpaulos/tealx
 
 go 1.17
 
