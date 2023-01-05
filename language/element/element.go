@@ -45,6 +45,14 @@ type xmlContainer struct {
 	Children []xmlChildElement `xml:",any"`
 }
 
+func makeXmlContainer(elements ...xmlElement) xmlContainer {
+	children := make([]xmlChildElement, len(elements))
+	for i, element := range elements {
+		children[i] = xmlChildElement{element}
+	}
+	return xmlContainer{Children: children}
+}
+
 func (x xmlContainer) containerElement() (Container, error) {
 	elementChildren := make([]Element, len(x.Children))
 	for i, inner := range x.Children {

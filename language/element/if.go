@@ -1,9 +1,12 @@
 package element
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"fmt"
+)
 
 type If struct {
-	Condition Container `xml:"condition"`
+	Condition Element   `xml:"condition"`
 	Then      Container `xml:"then"`
 	Else      Container `xml:"else"`
 }
@@ -14,7 +17,7 @@ func (i *If) Inner() []Element {
 
 func (i *If) xml() xmlElement {
 	return &xmlIf{
-		Condition: i.Condition.xmlContainer(),
+		Condition: makeXmlContainer(i.Condition.xml()),
 		Then:      i.Then.xmlContainer(),
 		Else:      i.Else.xmlContainer(),
 	}
@@ -32,6 +35,9 @@ func (x *xmlIf) element() (Element, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(condition.Children) != 1 {
+		return nil, fmt.Errorf("expected condition to have exactly 1 child, but got %d", len(condition.Children))
+	}
 	thenBranch, err := x.Then.containerElement()
 	if err != nil {
 		return nil, err
@@ -42,7 +48,7 @@ func (x *xmlIf) element() (Element, error) {
 	}
 
 	return &If{
-		Condition: condition,
+		Condition: condition.Children[0],
 		Then:      thenBranch,
 		Else:      elseBranch,
 	}, nil

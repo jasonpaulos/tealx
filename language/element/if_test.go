@@ -9,7 +9,7 @@ import (
 func TestIfMarshal(t *testing.T) {
 	t.Parallel()
 	element := &If{
-		Condition: Container{Children: []Element{&Int{Value: 1}}},
+		Condition: &Int{Value: 1},
 		Then:      Container{Children: []Element{&Int{Value: 2}}},
 		Else:      Container{Children: []Element{&Int{Value: 3}, &Int{Value: 4}}},
 	}
