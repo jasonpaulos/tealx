@@ -2,15 +2,14 @@ package element
 
 import (
 	"encoding/xml"
-	"fmt"
 
 	"github.com/jasonpaulos/tealx/language"
 )
 
 type If struct {
-	Condition Element   `xml:"condition"`
-	Then      Container `xml:"then"`
-	Else      Container `xml:"else"`
+	Condition Element
+	Then      Container
+	Else      Container
 }
 
 func (i *If) Codegen() language.ControlFlowGraph {
@@ -42,12 +41,9 @@ type xmlIf struct {
 }
 
 func (x *xmlIf) element() (Element, error) {
-	condition, err := x.Condition.containerElement()
+	condition, err := x.Condition.expectSingleElement()
 	if err != nil {
 		return nil, err
-	}
-	if len(condition.Children) != 1 {
-		return nil, fmt.Errorf("expected condition to have exactly 1 child, but got %d", len(condition.Children))
 	}
 	thenBranch, err := x.Then.containerElement()
 	if err != nil {
@@ -59,7 +55,7 @@ func (x *xmlIf) element() (Element, error) {
 	}
 
 	return &If{
-		Condition: condition.Children[0],
+		Condition: condition,
 		Then:      thenBranch,
 		Else:      elseBranch,
 	}, nil

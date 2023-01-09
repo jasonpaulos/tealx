@@ -12,8 +12,8 @@ func TestXmlMarshalRoundtrip(t *testing.T) {
 		Version: 8,
 		Container: Container{
 			Children: []Element{
-				&Int{Value: 1234},
 				&Bytes{Value: []byte("testing 1 2 3 4 5")},
+				&Return{Value: &Int{Value: 1234}},
 			},
 		},
 	}
@@ -28,4 +28,6 @@ func TestXmlMarshalRoundtrip(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, encoded, roundTripEncoded)
+
+	t.Log(string(encoded))
 }

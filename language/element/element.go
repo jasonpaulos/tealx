@@ -1,6 +1,10 @@
 package element
 
-import "github.com/jasonpaulos/tealx/language"
+import (
+	"fmt"
+
+	"github.com/jasonpaulos/tealx/language"
+)
 
 type Element interface {
 	Inner() []Element
@@ -64,6 +68,33 @@ func makeXmlContainer(elements ...xmlElement) xmlContainer {
 	return xmlContainer{Children: children}
 }
 
+func (x xmlContainer) expectNElements(n int) ([]Element, error) {
+	containerElement, err := x.containerElement()
+	if err != nil {
+		return nil, err
+	}
+	if len(containerElement.Children) != n {
+		return nil, fmt.Errorf("expected container to have %d child element(s), but got %d", n, len(containerElement.Children))
+	}
+	return containerElement.Children, nil
+}
+
+func (x xmlContainer) expectSingleElement() (Element, error) {
+	expected, err := x.expectNElements(1)
+	if err != nil {
+		return nil, err
+	}
+	return expected[0], err
+}
+
+func (x xmlContainer) expectTwoElements() (Element, Element, error) {
+	expected, err := x.expectNElements(2)
+	if err != nil {
+		return nil, nil, err
+	}
+	return expected[0], expected[1], err
+}
+
 func (x xmlContainer) containerElement() (Container, error) {
 	elementChildren := make([]Element, len(x.Children))
 	for i, inner := range x.Children {
@@ -79,9 +110,9 @@ func (x xmlContainer) containerElement() (Container, error) {
 }
 
 func (x xmlContainer) element() (Element, error) {
-	parentElement, err := x.containerElement()
+	containerElement, err := x.containerElement()
 	if err != nil {
 		return nil, err
 	}
-	return parentElement, nil
+	return containerElement, nil
 }

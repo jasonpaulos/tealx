@@ -76,6 +76,31 @@ func (j *ConditionalJump) ReplaceIncoming(oldIncoming, newIncoming *CodeBlock) {
 	}
 }
 
+type MatchJump struct {
+	Targets     []*CodeBlock
+	DefaultPath *CodeBlock
+}
+
+func (j *MatchJump) GetNodes() []*CodeBlock {
+	nodes := make([]*CodeBlock, 0, len(j.Targets)+1)
+	// Put DefaultPath first so that no explicit branch opcode will be needed to
+	// invoke it after `match`
+	nodes = append(nodes, j.Targets...)
+	nodes = append(nodes, j.DefaultPath)
+	return nodes
+}
+
+func (j *MatchJump) ReplaceIncoming(oldIncoming, newIncoming *CodeBlock) {
+	for i, target := range j.Targets {
+		if target == oldIncoming {
+			j.Targets[i] = newIncoming
+		}
+	}
+	if j.DefaultPath == oldIncoming {
+		j.DefaultPath = newIncoming
+	}
+}
+
 type ControlFlowGraph struct {
 	Start *CodeBlock
 	End   *CodeBlock
@@ -133,8 +158,61 @@ func (g *ControlFlowGraph) AppendConditional(trueBranch, falseBranch ControlFlow
 		TrueBranch:  trueBranch.Start,
 		FalseBranch: falseBranch.Start,
 	}
+
 	trueBranch.Start.Incoming = append(trueBranch.Start.Incoming, g.End)
 	falseBranch.Start.Incoming = append(falseBranch.Start.Incoming, g.End)
+
+	g.End = &newEnd
+	return nil
+}
+
+func (g *ControlFlowGraph) AppendMatch(targets []ControlFlowGraph, defaultTarget ControlFlowGraph) error {
+	if len(targets) == 0 {
+		return errors.New("must be at least one target")
+	}
+	if g.End.Outgoing != nil {
+		return errors.New("end node must be terminal")
+	}
+	for _, target := range targets {
+		if target.End.Outgoing != nil {
+			return errors.New("target end node must be terminal")
+		}
+	}
+	if defaultTarget.End.Outgoing != nil {
+		return errors.New("default target end node must be terminal")
+	}
+
+	newEndIncoming := make([]*CodeBlock, len(targets)+1)
+	for i, target := range targets {
+		newEndIncoming[i] = target.End
+	}
+	newEndIncoming[len(newEndIncoming)-1] = defaultTarget.End
+	// newEnd will postdominate targets to become the new graph end node
+	newEnd := CodeBlock{
+		Incoming: newEndIncoming,
+	}
+	for _, target := range targets {
+		target.End.Outgoing = &UnconditionalJump{
+			Next: &newEnd,
+		}
+	}
+	defaultTarget.End.Outgoing = &UnconditionalJump{
+		Next: &newEnd,
+	}
+
+	targetStarts := make([]*CodeBlock, len(targets))
+	for i, target := range targets {
+		targetStarts[i] = target.Start
+	}
+	g.End.Outgoing = &MatchJump{
+		Targets:     targetStarts,
+		DefaultPath: defaultTarget.Start,
+	}
+
+	for _, target := range targets {
+		target.Start.Incoming = append(target.Start.Incoming, g.End)
+	}
+	defaultTarget.Start.Incoming = append(defaultTarget.Start.Incoming, g.End)
 
 	g.End = &newEnd
 	return nil
@@ -239,6 +317,20 @@ func Flatten(blocks []*CodeBlock) []Operation {
 
 			references[falseBranch]++
 			code = append(code, Operation{Opcode: "b", Arguments: []string{fmt.Sprintf("l%d", falseBranchIndex)}})
+		case *MatchJump:
+			targetLabels := make([]string, len(outgoing.Targets))
+			for i, target := range outgoing.Targets {
+				index := blockIndex(blocks, target)
+				targetLabels[i] = fmt.Sprintf("l%d", index)
+				references[target]++
+			}
+			code = append(code, Operation{Opcode: "match", Arguments: targetLabels})
+
+			defaultPathIndex := blockIndex(blocks, outgoing.DefaultPath)
+			if defaultPathIndex != i+1 {
+				references[outgoing.DefaultPath]++
+				code = append(code, Operation{Opcode: "b", Arguments: []string{fmt.Sprintf("l%d", defaultPathIndex)}})
+			}
 		default:
 			panic("unknown jump type")
 		}

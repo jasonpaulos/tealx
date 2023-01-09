@@ -18,7 +18,7 @@ type Bytes struct {
 func (b *Bytes) Codegen() language.ControlFlowGraph {
 	return language.MakeControlFlowGraph([]language.Operation{
 		{
-			Opcode:    "int",
+			Opcode:    "byte",
 			Arguments: []string{"0x" + hex.EncodeToString(b.Value)},
 		},
 	})
