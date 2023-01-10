@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jasonpaulos/tealx/language"
 	. "github.com/jasonpaulos/tealx/language/element"
 	"github.com/stretchr/testify/require"
 )
@@ -40,6 +41,17 @@ func TestProgramCompile(t *testing.T) {
 	t.Log(builder.String())
 }
 
+func serialize(t *testing.T, ops []language.Operation) string {
+	t.Helper()
+	var builder strings.Builder
+	w := opWriter{StringWriter: &builder}
+	for _, op := range ops {
+		err := w.WriteOp(op)
+		require.NoError(t, err)
+	}
+	return builder.String()
+}
+
 func TestIfCodegen(t *testing.T) {
 	t.Parallel()
 	element := &If{
@@ -54,7 +66,7 @@ func TestIfCodegen(t *testing.T) {
 
 	blocks := graph.Sort()
 	ops := flatten(blocks, "")
-	compiled := serialize(ops)
+	compiled := serialize(t, ops)
 
 	t.Log(compiled)
 }
@@ -88,7 +100,7 @@ func TestMatchCodegen(t *testing.T) {
 
 	blocks := graph.Sort()
 	ops := flatten(blocks, "")
-	compiled := serialize(ops)
+	compiled := serialize(t, ops)
 
 	t.Log(compiled)
 }
