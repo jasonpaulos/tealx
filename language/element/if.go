@@ -12,10 +12,10 @@ type If struct {
 	Else      Container
 }
 
-func (i *If) Codegen() language.ControlFlowGraph {
-	conditionSubgraph := i.Condition.Codegen()
-	thenSubgraph := i.Then.Codegen()
-	elseSubgraph := i.Else.Codegen()
+func (i *If) Codegen(ctx CodegenContext) language.ControlFlowGraph {
+	conditionSubgraph := i.Condition.Codegen(ctx)
+	thenSubgraph := i.Then.Codegen(ctx)
+	elseSubgraph := i.Else.Codegen(ctx)
 
 	conditionSubgraph.AppendConditional(thenSubgraph, elseSubgraph)
 	return conditionSubgraph

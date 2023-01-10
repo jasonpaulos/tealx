@@ -3,7 +3,6 @@ package element
 import (
 	"testing"
 
-	"github.com/jasonpaulos/tealx/language"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,38 +39,4 @@ func TestMatchMarshal(t *testing.T) {
 	encoded, err := MarshalXml(decoded)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(encoded))
-}
-
-func TestMatchCodegen(t *testing.T) {
-	t.Parallel()
-	element := &Match{
-		Value: &Int{Value: 1},
-		DefaultCase: &Container{
-			Children: []Element{&Bytes{Value: []byte("c")}},
-		},
-		Cases: []MatchCase{
-			{
-				Value: &Int{Value: 2},
-				Body: Container{
-					Children: []Element{&Bytes{Value: []byte("a")}},
-				},
-			},
-			{
-				Value: &Int{Value: 3},
-				Body: Container{
-					Children: []Element{&Bytes{Value: []byte("b")}},
-				},
-			},
-		},
-	}
-
-	graph := element.Codegen()
-
-	// this is just a temporary test to manually inspect output
-
-	blocks := graph.Sort()
-	ops := language.Flatten(blocks)
-	compiled := language.Serialize(ops)
-
-	t.Log(compiled)
 }

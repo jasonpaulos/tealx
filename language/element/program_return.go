@@ -6,12 +6,12 @@ import (
 	"github.com/jasonpaulos/tealx/language"
 )
 
-type Return struct {
+type ProgramReturn struct {
 	Value Element
 }
 
-func (r *Return) Codegen() language.ControlFlowGraph {
-	value := r.Value.Codegen()
+func (r *ProgramReturn) Codegen(ctx CodegenContext) language.ControlFlowGraph {
+	value := r.Value.Codegen(ctx)
 	returnStmt := language.MakeControlFlowGraph([]language.Operation{
 		{
 			Opcode: "return",
@@ -22,29 +22,29 @@ func (r *Return) Codegen() language.ControlFlowGraph {
 	return value
 }
 
-func (r *Return) Inner() []Element {
+func (r *ProgramReturn) Inner() []Element {
 	return []Element{r.Value}
 }
 
-func (r *Return) xml() xmlElement {
-	return &xmlReturn{
+func (r *ProgramReturn) xml() xmlElement {
+	return &xmlProgramReturn{
 		xmlContainer: makeXmlContainer(r.Value.xml()),
 	}
 }
 
-type xmlReturn struct {
+type xmlProgramReturn struct {
 	xmlContainer
 
-	XMLName xml.Name `xml:"return"`
+	XMLName xml.Name `xml:"program-return"`
 }
 
-func (x *xmlReturn) element() (Element, error) {
+func (x *xmlProgramReturn) element() (Element, error) {
 	value, err := x.xmlContainer.expectSingleElement()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Return{
+	return &ProgramReturn{
 		Value: value,
 	}, nil
 }

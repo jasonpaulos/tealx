@@ -2,7 +2,10 @@ module github.com/jasonpaulos/tealx
 
 go 1.17
 
-require github.com/stretchr/testify v1.8.1
+require (
+	github.com/akamensky/argparse v1.4.0
+	github.com/stretchr/testify v1.8.1
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

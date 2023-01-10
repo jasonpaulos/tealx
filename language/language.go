@@ -2,10 +2,12 @@ package language
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
+// Operation represents a single line in a TEAL program
+//
+// Right now its representation is pretty basic
 type Operation struct {
 	Opcode    string
 	Arguments []string
@@ -166,7 +168,7 @@ func (g *ControlFlowGraph) AppendConditional(trueBranch, falseBranch ControlFlow
 	return nil
 }
 
-func (g *ControlFlowGraph) AppendMatch(targets []ControlFlowGraph, defaultTarget ControlFlowGraph) error {
+func (g *ControlFlowGraph) AppendMatch(targets []ControlFlowGraph, defaultTarget *ControlFlowGraph) error {
 	if len(targets) == 0 {
 		return errors.New("must be at least one target")
 	}
@@ -186,7 +188,11 @@ func (g *ControlFlowGraph) AppendMatch(targets []ControlFlowGraph, defaultTarget
 	for i, target := range targets {
 		newEndIncoming[i] = target.End
 	}
-	newEndIncoming[len(newEndIncoming)-1] = defaultTarget.End
+	if defaultTarget != nil {
+		newEndIncoming[len(newEndIncoming)-1] = defaultTarget.End
+	} else {
+		newEndIncoming[len(newEndIncoming)-1] = g.End
+	}
 	// newEnd will postdominate targets to become the new graph end node
 	newEnd := CodeBlock{
 		Incoming: newEndIncoming,
@@ -196,23 +202,33 @@ func (g *ControlFlowGraph) AppendMatch(targets []ControlFlowGraph, defaultTarget
 			Next: &newEnd,
 		}
 	}
-	defaultTarget.End.Outgoing = &UnconditionalJump{
-		Next: &newEnd,
+	if defaultTarget != nil {
+		defaultTarget.End.Outgoing = &UnconditionalJump{
+			Next: &newEnd,
+		}
 	}
 
 	targetStarts := make([]*CodeBlock, len(targets))
 	for i, target := range targets {
 		targetStarts[i] = target.Start
 	}
+	var defaultPath *CodeBlock
+	if defaultTarget == nil {
+		defaultPath = &newEnd
+	} else {
+		defaultPath = defaultTarget.Start
+	}
 	g.End.Outgoing = &MatchJump{
 		Targets:     targetStarts,
-		DefaultPath: defaultTarget.Start,
+		DefaultPath: defaultPath,
 	}
 
 	for _, target := range targets {
 		target.Start.Incoming = append(target.Start.Incoming, g.End)
 	}
-	defaultTarget.Start.Incoming = append(defaultTarget.Start.Incoming, g.End)
+	if defaultTarget != nil {
+		defaultTarget.Start.Incoming = append(defaultTarget.Start.Incoming, g.End)
+	}
 
 	g.End = &newEnd
 	return nil
@@ -259,101 +275,4 @@ func (g *ControlFlowGraph) Sort() []*CodeBlock {
 	}
 
 	return order
-}
-
-func blockIndex(blocks []*CodeBlock, target *CodeBlock) int {
-	for i, block := range blocks {
-		if block == target {
-			return i
-		}
-	}
-	panic("block not fond")
-}
-
-func Flatten(blocks []*CodeBlock) []Operation {
-	var codeblocks [][]Operation
-	references := make(map[*CodeBlock]int)
-
-	for i, block := range blocks {
-		code := block.Operations[:]
-
-		if block.Outgoing == nil {
-			// TODO: also check if this block has an op that would make outgoing dead code, i.e. return, retsub, or err
-			codeblocks = append(codeblocks, code)
-			continue
-		}
-
-		switch outgoing := block.Outgoing.(type) {
-		case *UnconditionalJump:
-			next := outgoing.Next
-			nextIndex := blockIndex(blocks, next)
-			if nextIndex != i+1 {
-				references[next]++
-				code = append(code, Operation{Opcode: "b", Arguments: []string{fmt.Sprintf("l%d", nextIndex)}})
-			}
-		case *ConditionalJump:
-			trueBranch := outgoing.TrueBranch
-			falseBranch := outgoing.FalseBranch
-
-			trueBranchIndex := blockIndex(blocks, trueBranch)
-			falseBranchIndex := blockIndex(blocks, falseBranch)
-
-			if falseBranchIndex == i+1 {
-				references[trueBranch]++
-				code = append(code, Operation{Opcode: "bnz", Arguments: []string{fmt.Sprintf("l%d", trueBranchIndex)}})
-				codeblocks = append(codeblocks, code)
-				continue
-			}
-
-			if trueBranchIndex == i+1 {
-				references[falseBranch]++
-				code = append(code, Operation{Opcode: "bz", Arguments: []string{fmt.Sprintf("l%d", falseBranchIndex)}})
-				codeblocks = append(codeblocks, code)
-				continue
-			}
-
-			references[trueBranch]++
-			code = append(code, Operation{Opcode: "bnz", Arguments: []string{fmt.Sprintf("l%d", trueBranchIndex)}})
-
-			references[falseBranch]++
-			code = append(code, Operation{Opcode: "b", Arguments: []string{fmt.Sprintf("l%d", falseBranchIndex)}})
-		case *MatchJump:
-			targetLabels := make([]string, len(outgoing.Targets))
-			for i, target := range outgoing.Targets {
-				index := blockIndex(blocks, target)
-				targetLabels[i] = fmt.Sprintf("l%d", index)
-				references[target]++
-			}
-			code = append(code, Operation{Opcode: "match", Arguments: targetLabels})
-
-			defaultPathIndex := blockIndex(blocks, outgoing.DefaultPath)
-			if defaultPathIndex != i+1 {
-				references[outgoing.DefaultPath]++
-				code = append(code, Operation{Opcode: "b", Arguments: []string{fmt.Sprintf("l%d", defaultPathIndex)}})
-			}
-		default:
-			panic("unknown jump type")
-		}
-
-		codeblocks = append(codeblocks, code)
-	}
-
-	var ops []Operation
-
-	for i, code := range codeblocks {
-		if references[blocks[i]] != 0 {
-			ops = append(ops, Operation{Opcode: fmt.Sprintf("l%d:", i)})
-		}
-		ops = append(ops, code...)
-	}
-
-	return ops
-}
-
-func Serialize(ops []Operation) string {
-	opsAsStrings := make([]string, len(ops))
-	for i, op := range ops {
-		opsAsStrings[i] = op.String()
-	}
-	return strings.Join(opsAsStrings, "\n")
 }

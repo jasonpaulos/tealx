@@ -6,17 +6,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIfMarshal(t *testing.T) {
+func TestLogMarshal(t *testing.T) {
 	t.Parallel()
-	element := &If{
-		Condition: &Int{Value: 1},
-		Then:      Container{Children: []Element{&Int{Value: 2}}},
-		Else:      Container{Children: []Element{&Int{Value: 3}, &Int{Value: 4}}},
+	element := &Log{
+		Value: &Int{Value: 1},
 	}
 
 	actual, err := MarshalXml(element)
 	require.NoError(t, err)
-	expected := `<if><condition><int value="1"></int></condition><then><int value="2"></int></then><else><int value="3"></int><int value="4"></int></else></if>`
+	expected := `<log><int value="1"></int></log>`
 	require.Equal(t, expected, string(actual))
 
 	decoded, err := UnmarshalXmlBytes(actual)

@@ -1,0 +1,36 @@
+#pragma version 8
+int 1
+bnz main_l6
+byte 0x66616c7365
+log
+main_l2:
+int 0
+int 0
+int 1
+match main_l5 main_l4
+byte 0x64656661756c74
+log
+b main_l7
+main_l4:
+byte 0x6f6e65
+log
+b main_l7
+main_l5:
+byte 0x7a65726f
+log
+b main_l7
+main_l6:
+byte 0x74727565
+log
+b main_l2
+main_l7:
+callsub sub_isEven
+return
+sub_isEven:
+proto 1 1
+frame_dig -1
+int 2
+%
+int 0
+==
+retsub

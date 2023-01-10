@@ -1,35 +1,67 @@
 package element
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+
+	"github.com/jasonpaulos/tealx/language"
+)
 
 type Program struct {
-	Container
+	Version     uint64
+	Main        Container
+	Subroutines []*Subroutine
+}
 
-	Version uint64
+func (p *Program) Codegen(ctx CodegenContext) language.ControlFlowGraph {
+	// subroutines are handled separately
+	return p.Main.Codegen(ctx)
+}
+
+func (p *Program) Inner() []Element {
+	elements := make([]Element, 0, len(p.Subroutines)+1)
+	elements = append(elements, p.Main)
+	for _, subroutine := range p.Subroutines {
+		elements = append(elements, subroutine)
+	}
+	return elements
 }
 
 func (p *Program) xml() xmlElement {
+	subroutines := make([]xmlSubroutine, len(p.Subroutines))
+	for i, sub := range p.Subroutines {
+		subroutines[i] = sub.xmlSubroutine()
+	}
 	return &xmlProgram{
-		xmlContainer: p.Container.xmlContainer(),
-		Version:      p.Version,
+		Version:     p.Version,
+		Main:        p.Main.xmlContainer(),
+		Subroutines: subroutines,
 	}
 }
 
 type xmlProgram struct {
-	xmlContainer
-
-	XMLName xml.Name `xml:"program"`
-	Version uint64   `xml:"version,attr"`
+	XMLName     xml.Name        `xml:"program"`
+	Version     uint64          `xml:"version,attr"`
+	Main        xmlContainer    `xml:"main"`
+	Subroutines []xmlSubroutine `xml:"subroutine"`
 }
 
 func (x *xmlProgram) element() (Element, error) {
-	parentElement, err := x.xmlContainer.containerElement()
+	main, err := x.Main.containerElement()
 	if err != nil {
 		return nil, err
 	}
+	subroutines := make([]*Subroutine, len(x.Subroutines))
+	for i, sub := range x.Subroutines {
+		var err error
+		subroutines[i], err = sub.subroutine()
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return &Program{
-		Container: parentElement,
-		Version:   x.Version,
+		Version:     x.Version,
+		Main:        main,
+		Subroutines: subroutines,
 	}, nil
 }

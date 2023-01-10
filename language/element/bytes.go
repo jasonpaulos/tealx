@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"strings"
 
 	"github.com/jasonpaulos/tealx/language"
 )
@@ -15,7 +16,7 @@ type Bytes struct {
 	Value []byte
 }
 
-func (b *Bytes) Codegen() language.ControlFlowGraph {
+func (b *Bytes) Codegen(ctx CodegenContext) language.ControlFlowGraph {
 	return language.MakeControlFlowGraph([]language.Operation{
 		{
 			Opcode:    "byte",
@@ -31,7 +32,7 @@ func (b *Bytes) xml() xmlElement {
 const (
 	BytesFormatHex    string = "hex"
 	BytesFormatBase64 string = "base64"
-	BytesFormatUTF8   string = "UTF-8"
+	BytesFormatUTF8   string = "utf-8"
 )
 
 type xmlBytes struct {
@@ -44,7 +45,7 @@ func (x *xmlBytes) element() (Element, error) {
 	var decoded []byte
 	var err error
 
-	switch x.Format {
+	switch strings.ToLower(x.Format) {
 	case BytesFormatHex:
 		decoded, err = hex.DecodeString(x.Value)
 	case BytesFormatBase64:

@@ -13,7 +13,7 @@ type Int struct {
 	Value uint64
 }
 
-func (i *Int) Codegen() language.ControlFlowGraph {
+func (i *Int) Codegen(ctx CodegenContext) language.ControlFlowGraph {
 	return language.MakeControlFlowGraph([]language.Operation{
 		{
 			Opcode:    "int",

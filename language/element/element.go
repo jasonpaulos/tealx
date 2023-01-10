@@ -8,8 +8,12 @@ import (
 
 type Element interface {
 	Inner() []Element
-	Codegen() language.ControlFlowGraph
+	Codegen(ctx CodegenContext) language.ControlFlowGraph
 	xml() xmlElement
+}
+
+type CodegenContext struct {
+	CurrentSubroutine *Subroutine
 }
 
 type xmlElement interface {
@@ -30,10 +34,10 @@ func (c Container) Inner() []Element {
 	return c.Children
 }
 
-func (c Container) Codegen() language.ControlFlowGraph {
+func (c Container) Codegen(ctx CodegenContext) language.ControlFlowGraph {
 	graph := language.MakeControlFlowGraph(nil)
 	for _, child := range c.Children {
-		graph.Append(child.Codegen())
+		graph.Append(child.Codegen(ctx))
 	}
 	return graph
 }

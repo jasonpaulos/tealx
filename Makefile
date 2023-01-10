@@ -1,6 +1,6 @@
 
 build:
-	go build -v ./...
+	go build -o bin/tealx -v ./language/cli
 
 test:
 	go test ./... -race

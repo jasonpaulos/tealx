@@ -12,18 +12,17 @@ type Match struct {
 	Cases       []MatchCase
 }
 
-func (m *Match) Codegen() language.ControlFlowGraph {
-	graph := m.Value.Codegen()
+func (m *Match) Codegen(ctx CodegenContext) language.ControlFlowGraph {
+	graph := m.Value.Codegen(ctx)
 	targets := make([]language.ControlFlowGraph, len(m.Cases))
 	for i, c := range m.Cases {
-		graph.Append(c.Value.Codegen())
-		targets[i] = c.Body.Codegen()
+		graph.Append(c.Value.Codegen(ctx))
+		targets[i] = c.Body.Codegen(ctx)
 	}
-	var defaultTarget language.ControlFlowGraph
-	if m.DefaultCase == nil {
-		defaultTarget = language.MakeControlFlowGraph(nil)
-	} else {
-		defaultTarget = m.DefaultCase.Codegen()
+	var defaultTarget *language.ControlFlowGraph
+	if m.DefaultCase != nil {
+		tmp := m.DefaultCase.Codegen(ctx)
+		defaultTarget = &tmp
 	}
 	graph.AppendMatch(targets, defaultTarget)
 	return graph
@@ -62,6 +61,18 @@ func (m *Match) xml() xmlElement {
 	}
 }
 
+type MatchCase struct {
+	Value Element
+	Body  Container
+}
+
+func (c *MatchCase) xml() xmlMatchCase {
+	return xmlMatchCase{
+		Value: makeXmlContainer(c.Value.xml()),
+		Body:  c.Body.xmlContainer(),
+	}
+}
+
 type xmlMatch struct {
 	XMLName     xml.Name       `xml:"match"`
 	Value       xmlContainer   `xml:"value"`
@@ -96,18 +107,6 @@ func (x *xmlMatch) element() (Element, error) {
 		Cases:       cases,
 		DefaultCase: defaultCase,
 	}, nil
-}
-
-type MatchCase struct {
-	Value Element
-	Body  Container
-}
-
-func (c *MatchCase) xml() xmlMatchCase {
-	return xmlMatchCase{
-		Value: makeXmlContainer(c.Value.xml()),
-		Body:  c.Body.xmlContainer(),
-	}
 }
 
 type xmlMatchCase struct {
