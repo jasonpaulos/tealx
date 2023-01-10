@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/akamensky/argparse"
@@ -9,8 +10,8 @@ import (
 	"github.com/jasonpaulos/tealx/language/element"
 )
 
-func parseProgram(file *os.File) (*element.Program, error) {
-	e, err := element.UnmarshalXml(file)
+func parseProgram(r io.Reader) (*element.Program, error) {
+	e, err := element.UnmarshalXml(r)
 	if err != nil {
 		return nil, err
 	}
@@ -18,6 +19,19 @@ func parseProgram(file *os.File) (*element.Program, error) {
 		return program, nil
 	}
 	return nil, fmt.Errorf("expected type Program but got %#T", e)
+}
+
+func compileProgram(input io.Reader, output io.StringWriter) error {
+	program, err := parseProgram(input)
+	if err != nil {
+		return fmt.Errorf("error when parsing input: %w", err)
+	}
+
+	err = compiler.Compile(*program, output)
+	if err != nil {
+		return fmt.Errorf("error when compiling: %w", err)
+	}
+	return nil
 }
 
 func main() {
@@ -31,15 +45,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	program, err := parseProgram(inFile)
+	err = compileProgram(inFile, outFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error when parsing %s: %v\n", inFile.Name(), err)
-		os.Exit(1)
-	}
-
-	err = compiler.Compile(*program, outFile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error when compiling: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
