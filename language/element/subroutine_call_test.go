@@ -10,9 +10,9 @@ func TestSubroutineCallMarshal(t *testing.T) {
 	t.Parallel()
 	element := &SubroutineCall{
 		Name: "test",
-		Arguments: []SubroutineArgument{
-			{Value: &Int{Value: 1}},
-			{Value: &Int{Value: 2}},
+		Arguments: []Element{
+			&Int{Value: 1},
+			&Int{Value: 2},
 		},
 	}
 

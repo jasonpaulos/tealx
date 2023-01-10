@@ -8,13 +8,13 @@ import (
 
 type SubroutineCall struct {
 	Name      string
-	Arguments []SubroutineArgument
+	Arguments []Element
 }
 
 func (c *SubroutineCall) Codegen(ctx CodegenContext) language.ControlFlowGraph {
 	graph := language.MakeControlFlowGraph(nil)
 	for _, arg := range c.Arguments {
-		graph.Append(arg.Value.Codegen(ctx))
+		graph.Append(arg.Codegen(ctx))
 	}
 
 	graph.Append(language.MakeControlFlowGraph([]language.Operation{
@@ -25,17 +25,13 @@ func (c *SubroutineCall) Codegen(ctx CodegenContext) language.ControlFlowGraph {
 }
 
 func (c *SubroutineCall) Inner() []Element {
-	inners := make([]Element, len(c.Arguments))
-	for i, arg := range c.Arguments {
-		inners[i] = arg.Value
-	}
-	return inners
+	return c.Arguments
 }
 
 func (c *SubroutineCall) xml() xmlElement {
-	args := make([]xmlSubroutineArgument, len(c.Arguments))
+	args := make([]xmlContainer, len(c.Arguments))
 	for i, arg := range c.Arguments {
-		args[i] = arg.xml()
+		args[i] = makeXmlContainer(arg.xml())
 	}
 	return &xmlSubroutineCall{
 		Name:      c.Name,
@@ -43,27 +39,17 @@ func (c *SubroutineCall) xml() xmlElement {
 	}
 }
 
-type SubroutineArgument struct {
-	Value Element
-}
-
-func (a *SubroutineArgument) xml() xmlSubroutineArgument {
-	return xmlSubroutineArgument{
-		xmlContainer: makeXmlContainer(a.Value.xml()),
-	}
-}
-
 type xmlSubroutineCall struct {
-	XMLName   xml.Name                `xml:"subroutine-call"`
-	Name      string                  `xml:"name,attr"`
-	Arguments []xmlSubroutineArgument `xml:"argument"`
+	XMLName   xml.Name       `xml:"subroutine-call"`
+	Name      string         `xml:"name,attr"`
+	Arguments []xmlContainer `xml:"argument"`
 }
 
 func (x *xmlSubroutineCall) element() (Element, error) {
-	args := make([]SubroutineArgument, len(x.Arguments))
+	args := make([]Element, len(x.Arguments))
 	for i, arg := range x.Arguments {
 		var err error
-		args[i], err = arg.subroutineArgument()
+		args[i], err = arg.expectSingleElement()
 		if err != nil {
 			return nil, err
 		}
@@ -71,21 +57,5 @@ func (x *xmlSubroutineCall) element() (Element, error) {
 	return &SubroutineCall{
 		Name:      x.Name,
 		Arguments: args,
-	}, nil
-}
-
-type xmlSubroutineArgument struct {
-	xmlContainer
-
-	XMLName xml.Name `xml:"argument"`
-}
-
-func (x *xmlSubroutineArgument) subroutineArgument() (SubroutineArgument, error) {
-	value, err := x.xmlContainer.expectSingleElement()
-	if err != nil {
-		return SubroutineArgument{}, err
-	}
-	return SubroutineArgument{
-		Value: value,
 	}, nil
 }
