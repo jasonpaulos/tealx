@@ -56,3 +56,5 @@ To compile Tealx locally, follow these steps:
 $ ./bin/tealx -i examples/example.xml -o examples/example.teal
 Successfully compiled examples/example.xml to examples/example.teal
 ```
+
+Also, check out this block-based frontend for writing Algorand Smart Contracts, which can produce Tealx programs: https://github.com/algochoi/blockly
