@@ -17,7 +17,7 @@ func (i *If) Codegen(ctx CodegenContext) language.ControlFlowGraph {
 	thenSubgraph := i.Then.Codegen(ctx)
 	elseSubgraph := i.Else.Codegen(ctx)
 
-	conditionSubgraph.AppendConditional(thenSubgraph, elseSubgraph)
+	conditionSubgraph.AppendConditionalSplit(thenSubgraph, elseSubgraph)
 	return conditionSubgraph
 }
 

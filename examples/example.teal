@@ -1,29 +1,36 @@
 #pragma version 8
 int 1
-bnz main_l6
+bnz main_l9
 byte 0x66616c7365
 log
 main_l2:
 int 0
 int 0
 int 1
-match main_l5 main_l4
+match main_l8 main_l7
 byte 0x64656661756c74
 log
-b main_l7
 main_l4:
+main_l5:
+int 1
+bz main_l10
+byte 0x6c6f6f7020626f6479
+log
+b main_l5
+main_l7:
 byte 0x6f6e65
 log
-b main_l7
-main_l5:
+b main_l4
+main_l8:
 byte 0x7a65726f
 log
-b main_l7
-main_l6:
+b main_l4
+main_l9:
 byte 0x74727565
 log
 b main_l2
-main_l7:
+main_l10:
+int 18
 callsub sub_isEven
 return
 sub_isEven:

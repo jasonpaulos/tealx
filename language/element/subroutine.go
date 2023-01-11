@@ -61,23 +61,23 @@ func (s *Subroutine) xml() xmlElement {
 
 type SubroutineArgumentInfo struct {
 	Name string
-	Type string
+	Type VariableType
 }
 
 func (a *SubroutineArgumentInfo) xml() xmlSubroutineArgumentInfo {
 	return xmlSubroutineArgumentInfo{
 		Name: a.Name,
-		Type: a.Type,
+		Type: a.Type.String(),
 	}
 }
 
 type SubroutineReturnInfo struct {
-	Type string
+	Type VariableType
 }
 
 func (r *SubroutineReturnInfo) xml() xmlSubroutineReturnInfo {
 	return xmlSubroutineReturnInfo{
-		Type: r.Type,
+		Type: r.Type.String(),
 	}
 }
 
@@ -96,11 +96,17 @@ func (x *xmlSubroutine) subroutine() (*Subroutine, error) {
 	}
 	args := make([]SubroutineArgumentInfo, len(x.Arguments))
 	for i, arg := range x.Arguments {
-		args[i] = arg.subroutineArgumentInfo()
+		args[i], err = arg.subroutineArgumentInfo()
+		if err != nil {
+			return nil, err
+		}
 	}
 	var subroutineReturn *SubroutineReturnInfo
 	if x.Return != nil {
-		tmp := x.Return.subroutineReturnInfo()
+		tmp, err := x.Return.subroutineReturnInfo()
+		if err != nil {
+			return nil, err
+		}
 		subroutineReturn = &tmp
 	}
 
@@ -126,11 +132,15 @@ type xmlSubroutineArgumentInfo struct {
 	Type    string   `xml:"type,attr"`
 }
 
-func (x *xmlSubroutineArgumentInfo) subroutineArgumentInfo() SubroutineArgumentInfo {
+func (x *xmlSubroutineArgumentInfo) subroutineArgumentInfo() (SubroutineArgumentInfo, error) {
+	argType, err := VariableTypeFromString(x.Type)
+	if err != nil {
+		return SubroutineArgumentInfo{}, err
+	}
 	return SubroutineArgumentInfo{
 		Name: x.Name,
-		Type: x.Type,
-	}
+		Type: argType,
+	}, nil
 }
 
 type xmlSubroutineReturnInfo struct {
@@ -138,8 +148,12 @@ type xmlSubroutineReturnInfo struct {
 	Type    string   `xml:"type,attr"`
 }
 
-func (x *xmlSubroutineReturnInfo) subroutineReturnInfo() SubroutineReturnInfo {
-	return SubroutineReturnInfo{
-		Type: x.Type,
+func (x *xmlSubroutineReturnInfo) subroutineReturnInfo() (SubroutineReturnInfo, error) {
+	returnType, err := VariableTypeFromString(x.Type)
+	if err != nil {
+		return SubroutineReturnInfo{}, nil
 	}
+	return SubroutineReturnInfo{
+		Type: returnType,
+	}, nil
 }

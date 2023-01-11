@@ -17,10 +17,10 @@ func TestProgramCompile(t *testing.T) {
 			{
 				Name: "test_subroutine",
 				Arguments: []SubroutineArgumentInfo{
-					{Name: "a", Type: "uint64"},
-					{Name: "b", Type: "bytes"},
+					{Name: "a", Type: VariableTypeUint64},
+					{Name: "b", Type: VariableTypeBytes},
 				},
-				Return: &SubroutineReturnInfo{Type: "uint64"},
+				Return: &SubroutineReturnInfo{Type: VariableTypeUint64},
 				Body: Container{
 					Children: []Element{&Int{Value: 1}},
 				},
@@ -92,6 +92,26 @@ func TestMatchCodegen(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	graph := element.Codegen(CodegenContext{})
+
+	// this is just a temporary test to manually inspect output
+
+	blocks := graph.Sort()
+	ops := flatten(blocks, "")
+	compiled := serialize(t, ops)
+
+	t.Log(compiled)
+}
+
+func TestLoopCodegen(t *testing.T) {
+	t.Parallel()
+	element := &Loop{
+		Start:     nil,
+		Condition: &Int{Value: 1},
+		Step:      nil,
+		Body:      Container{Children: []Element{&Int{Value: 2}}},
 	}
 
 	graph := element.Codegen(CodegenContext{})

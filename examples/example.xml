@@ -62,7 +62,7 @@
             </default-case>
         </match>
 
-        <!-- <while>
+        <loop>
             <condition>
                 <int value="1" />
             </condition>
@@ -71,48 +71,13 @@
                     <bytes value="loop body" format="utf-8" />
                 </log>
             </body>
-        </while> -->
-
-        <!-- <variable name="i" type="uint64" />
-        <for>
-            <start>
-                <variable-set name="i">
-                    <int value="0" />
-                </variable-set>
-            </start>
-            <condition>
-                <less-than>
-                    <variable-get name="i" />
-                    <int value="10" />
-                </less-than>
-            </condition>
-            <step>
-                <variable-set name="i">
-                    <sum>
-                        <variable-get name="i" />
-                        <int value="1" />
-                    </sum>
-                </variable-set>
-            </step>
-            <body>
-                <log>
-                    <bytes value="loop body" format="utf-8" />
-                </log>
-            </body>
-        </for> -->
-
-        <!-- <loop>
-            <range start="0" stop="10" />
-            <body>
-                <log>
-                    <bytes value="loop body" format="utf-8" />
-                </log>
-            </body>
-        </loop> -->
+        </loop>
         
         <program-return>
             <subroutine-call name="isEven">
-                <int value="18" />
+                <argument>
+                    <int value="18" />
+                </argument>
             </subroutine-call>
         </program-return>
     </main>

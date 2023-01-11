@@ -131,7 +131,24 @@ func (g *ControlFlowGraph) Append(h ControlFlowGraph) error {
 	return nil
 }
 
-func (g *ControlFlowGraph) AppendConditional(trueBranch, falseBranch ControlFlowGraph) error {
+func (g *ControlFlowGraph) AppendDistinct(h ControlFlowGraph) error {
+	if g.End.Outgoing != nil {
+		return errors.New("end node must be terminal")
+	}
+	if h.End.Outgoing != nil {
+		return errors.New("new graph end node must be terminal")
+	}
+
+	g.End.Outgoing = &UnconditionalJump{
+		Next: h.Start,
+	}
+	h.Start.Incoming = append(h.Start.Incoming, g.End)
+
+	g.End = h.End
+	return nil
+}
+
+func (g *ControlFlowGraph) AppendConditionalSplit(trueBranch, falseBranch ControlFlowGraph) error {
 	if g.End.Outgoing != nil {
 		return errors.New("end node must be terminal")
 	}
@@ -163,6 +180,43 @@ func (g *ControlFlowGraph) AppendConditional(trueBranch, falseBranch ControlFlow
 
 	trueBranch.Start.Incoming = append(trueBranch.Start.Incoming, g.End)
 	falseBranch.Start.Incoming = append(falseBranch.Start.Incoming, g.End)
+
+	g.End = &newEnd
+	return nil
+}
+
+func (g *ControlFlowGraph) AppendConditionalRejoin(branch ControlFlowGraph, branchValue bool) error {
+	if g.End.Outgoing != nil {
+		return errors.New("end node must be terminal")
+	}
+	if branch.End.Outgoing != nil {
+		return errors.New("branch end node must be terminal")
+	}
+
+	// newEnd will postdominate branch to become the new graph end node
+	newEnd := CodeBlock{
+		Incoming: []*CodeBlock{
+			g.End,
+			branch.End,
+		},
+	}
+	branch.End.Outgoing = &UnconditionalJump{
+		Next: &newEnd,
+	}
+
+	var jump ConditionalJump
+	if branchValue {
+		// branch is true case
+		jump.TrueBranch = branch.Start
+		jump.FalseBranch = &newEnd
+	} else {
+		// branch is false case
+		jump.TrueBranch = &newEnd
+		jump.FalseBranch = branch.Start
+	}
+	g.End.Outgoing = &jump
+
+	branch.Start.Incoming = append(branch.Start.Incoming, g.End)
 
 	g.End = &newEnd
 	return nil

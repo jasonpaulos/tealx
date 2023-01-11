@@ -14,10 +14,10 @@ func TestProgramMarshal(t *testing.T) {
 			{
 				Name: "test_subroutine",
 				Arguments: []SubroutineArgumentInfo{
-					{Name: "a", Type: "uint64"},
-					{Name: "b", Type: "bytes"},
+					{Name: "a", Type: VariableTypeUint64},
+					{Name: "b", Type: VariableTypeBytes},
 				},
-				Return: &SubroutineReturnInfo{Type: "uint64"},
+				Return: &SubroutineReturnInfo{Type: VariableTypeUint64},
 				Body: Container{
 					Children: []Element{&Int{Value: 1}},
 				},

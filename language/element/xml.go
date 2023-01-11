@@ -86,10 +86,14 @@ func xmlTagToXmlElement(tag string) xmlElement {
 		return &xmlProgramReturn{}
 	case "variable-get":
 		return &xmlVariableGet{}
+	case "variable-set":
+		return &xmlVariableSet{}
 	case "if":
 		return &xmlIf{}
 	case "match":
 		return &xmlMatch{}
+	case "loop":
+		return &xmlLoop{}
 		// binary types
 	case "subtract":
 		return &xmlBinary{XMLName: BinaryTypeSubtraction.XmlName()}
